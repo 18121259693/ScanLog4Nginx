@@ -1,8 +1,13 @@
 package com.zzzmh.entity;
 
 public class ScanLog {
+    /** 0 成功 1 失败 */
     private Integer code;
+    /** 运行情况信息 */
     private String msg;
+
+    public ScanLog() {
+    }
 
     public ScanLog(Integer code, String msg) {
         this.code = code;

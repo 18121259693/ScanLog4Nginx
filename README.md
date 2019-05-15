@@ -4,3 +4,4 @@
 ## 方案
 1. Nginx日志不压缩access文件，且只保留7天
 2. crontab每日定时执行本工具，将前一天的access.log解析并存入mysql
+3. 本工具自身运行情况也记录log

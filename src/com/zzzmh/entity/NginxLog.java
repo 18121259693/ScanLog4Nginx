@@ -3,13 +3,23 @@ package com.zzzmh.entity;
 import java.util.Date;
 
 public class NginxLog {
+    /** ip地址 */
     private String ip;
+    /** 请求时间 */
     private Date time;
+    /** 请求目标路径 */
     private String target;
+    /** 请求HTTP状态码 */
     private Integer status;
+    /** 响应消耗时间(毫秒) */
     private Integer cost;
+    /** 请求来源 */
     private String referrer;
+    /** User Agent */
     private String ua;
+
+    public NginxLog() {
+    }
 
     public NginxLog(String ip, Date time, String target, Integer status, Integer cost, String referrer, String ua) {
         this.ip = ip;

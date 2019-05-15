@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50717
 File Encoding         : 65001
 
-Date: 2019-05-15 10:06:12
+Date: 2019-05-15 10:30:39
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -29,5 +29,17 @@ CREATE TABLE `sys_nginx_log` (
   `referrer` varchar(200) DEFAULT NULL,
   `ua` varchar(1000) DEFAULT NULL,
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Table structure for sys_scan_log
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_scan_log`;
+CREATE TABLE `sys_scan_log` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `code` tinyint(4) DEFAULT NULL,
+  `msg` varchar(500) DEFAULT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

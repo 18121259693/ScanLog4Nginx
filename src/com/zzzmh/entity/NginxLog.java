@@ -7,8 +7,12 @@ public class NginxLog {
     private String ip;
     /** 请求时间 */
     private Date time;
+    /** GET POST */
+    private String method;
     /** 请求目标路径 */
     private String target;
+    /** HTTP1.1/2.0 */
+    private String protocol;
     /** 请求HTTP状态码 */
     private Integer status;
     /** 响应消耗时间(毫秒) */
@@ -18,17 +22,26 @@ public class NginxLog {
     /** User Agent */
     private String ua;
 
+
+
     public NginxLog() {
+
     }
 
-    public NginxLog(String ip, Date time, String target, Integer status, Integer cost, String referrer, String ua) {
-        this.ip = ip;
-        this.time = time;
-        this.target = target;
-        this.status = status;
-        this.cost = cost;
-        this.referrer = referrer;
-        this.ua = ua;
+    public String getMethod() {
+        return method;
+    }
+
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
 
     public String getIp() {

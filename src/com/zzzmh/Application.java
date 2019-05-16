@@ -66,11 +66,13 @@ public class Application {
         }
     }
 
-    class Thread4Scaner extends Thread{
+    class Thread4Scaner extends Thread {
         private File file;
-        public Thread4Scaner(File file){
+
+        public Thread4Scaner(File file) {
             this.file = file;
         }
+
         @Override
         public void run() {
             try {
@@ -79,6 +81,7 @@ public class Application {
 //                e.printStackTrace();
             }
         }
+
         /**
          * 扫描日志文件 主方法
          * 在进此方法之前要先判断过file是非空且存在
@@ -90,7 +93,7 @@ public class Application {
          */
 
         public void ScannerFile(File file) {
-            System.out.println(file.getAbsolutePath());
+            System.out.println("开始解析:" + file.getName());
             long success = 0, error = 0, cost = System.currentTimeMillis();
             try {
                 // 这里是一个特殊的时间格式 所以单独声明到这里
@@ -158,7 +161,7 @@ public class Application {
                     } catch (Exception e) {
                         error++;
 //                    e.printStackTrace();
-                    } catch (Throwable t){
+                    } catch (Throwable t) {
                         error++;
 //                    t.printStackTrace();
                     }
@@ -173,14 +176,14 @@ public class Application {
                 JdbcUtils.saveScanLog(new ScanLog(file.getName(), 1, "error:" + e.getMessage(), success, error, cost));
                 e.printStackTrace();
             }
+            System.out.println("结束解析:" + file.getName());
         }
     }
 
 
-
     public static void main(String[] args) {
         long temp = System.currentTimeMillis();
-        new Application().ScannerAccessLog("20190301", "20190514");
+        new Application().ScannerAccessLog("20190301", "20190515");
         System.out.println("运行结束 消耗时间:" + ((System.currentTimeMillis() - temp) / 1000.0) + "秒");
     }
 }

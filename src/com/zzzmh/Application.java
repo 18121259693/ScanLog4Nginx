@@ -62,105 +62,121 @@ public class Application {
         String path = LOGPATH + FILENAME + "-" + date;
         File file = new File(path);
         if (file.exists()) {
-            ScannerFile(file);
+            new Thread4Scaner(file).start();
         }
     }
 
-    /**
-     * 扫描日志文件 主方法
-     * 在进此方法之前要先判断过file是非空且存在
-     * <p>
-     * 这里用Scanner 实现扫描 可以一行一行扫进内存
-     * 扫完的不占用内存，可防止文件过大内存溢出
-     *
-     * @param file 传入File
-     */
-
-    public void ScannerFile(File file) {
-        System.out.println(file.getAbsolutePath());
-        long success = 0, error = 0, cost = System.currentTimeMillis();
-        try {
-            // 这里是一个特殊的时间格式 所以单独声明到这里
-            SimpleDateFormat sdf = new SimpleDateFormat("[dd/MMM/yyyy:HH:mm:ss Z]", Locale.ENGLISH);
-            FileInputStream inputStream = new FileInputStream(file);
-            Scanner sc = new Scanner(inputStream, "UTF-8");
-            Pattern p = Pattern.compile(PATTERN);
-            Matcher m = null;
-            Connection conn = JdbcUtils.getConn();
-            while (sc.hasNextLine()) {
-                try {
-                    m = p.matcher(sc.nextLine());
-                    if (m.find()) {
-                        NginxLog nginxLog = new NginxLog();
-                        nginxLog.setIp(m.group(1));
-                        nginxLog.setTime(sdf.parse(m.group(2)));
-                        // 正则有个坑 GET / HTTP/1.1 3个字段一起归纳进m.group(3)了，本人正则辣鸡，就用笨办法拆分了
-                        String str = m.group(3);
-                        String method = null, target = null, prorocol = null;
-                        if (CommonUtils.isNotBlank(str)) {
-                            try {
-                                if (str.contains(" ") && str.indexOf(" ") < 50) {
-                                    method = str.substring(0, str.indexOf(" "));
-                                    if (str.indexOf(" ") != str.lastIndexOf(" ")
-                                            && str.length() - str.lastIndexOf(" ") < 50) {
-                                        target = str.substring(str.indexOf(" "), str.lastIndexOf(" "));
-                                        prorocol = str.substring(str.lastIndexOf(" "), str.length());
-                                    } else {
-                                        target = str.substring(str.indexOf(" "), str.length());
-                                    }
-                                } else {
-                                    target = str != null && str.length() > 10000 ? str.substring(0, 10000) : str;
-                                }
-                                if (method != null) {
-                                    method = method.trim();
-                                }
-                                if (target != null) {
-                                    target = target.trim();
-                                }
-                                if (prorocol != null) {
-                                    prorocol = prorocol.trim();
-                                }
-                            } catch (Exception e) {
-                                System.out.println("str:" + str);
-                                e.printStackTrace();
-                            }
-                        }
-                        nginxLog.setMethod(method);
-                        nginxLog.setTarget(target);
-                        nginxLog.setProtocol(prorocol);
-                        nginxLog.setStatus(m.group(4) == null ? null : Integer.valueOf(m.group(4)));
-                        nginxLog.setCost(m.group(5) == null ? null : Integer.valueOf(m.group(5)));
-                        nginxLog.setReferrer(m.group(6));
-                        nginxLog.setUa(m.group(7));
-                        String sql = JdbcUtils.getSqlByNginxLog(nginxLog);
-                        int update = JdbcUtils.update(conn, sql);
-                        if (update == -1) {
-                            error++;
-                        } else {
-                            success++;
-                        }
-                    } else {
-                        error++;
-                    }
-                } catch (Exception e) {
-                    error++;
-                    e.printStackTrace();
-                } catch (Throwable t){
-                    error++;
-                    t.printStackTrace();
-                }
+    class Thread4Scaner extends Thread{
+        private File file;
+        public Thread4Scaner(File file){
+            this.file = file;
+        }
+        @Override
+        public void run() {
+            try {
+                ScannerFile(file);
+            } catch (Exception e) {
+//                e.printStackTrace();
             }
-            cost = System.currentTimeMillis() - cost;
-            JdbcUtils.saveScanLog(new ScanLog(file.getName(), 0, "success", success, error, cost));
-            conn.close();
-            inputStream.close();
-            sc.close();
-        } catch (Exception e) {
-            cost = System.currentTimeMillis() - cost;
-            JdbcUtils.saveScanLog(new ScanLog(file.getName(), 1, "error:" + e.getMessage(), success, error, cost));
-            e.printStackTrace();
+        }
+        /**
+         * 扫描日志文件 主方法
+         * 在进此方法之前要先判断过file是非空且存在
+         * <p>
+         * 这里用Scanner 实现扫描 可以一行一行扫进内存
+         * 扫完的不占用内存，可防止文件过大内存溢出
+         *
+         * @param file 传入File
+         */
+
+        public void ScannerFile(File file) {
+            System.out.println(file.getAbsolutePath());
+            long success = 0, error = 0, cost = System.currentTimeMillis();
+            try {
+                // 这里是一个特殊的时间格式 所以单独声明到这里
+                SimpleDateFormat sdf = new SimpleDateFormat("[dd/MMM/yyyy:HH:mm:ss Z]", Locale.ENGLISH);
+                FileInputStream inputStream = new FileInputStream(file);
+                Scanner sc = new Scanner(inputStream, "UTF-8");
+                Pattern p = Pattern.compile(PATTERN);
+                Matcher m = null;
+                Connection conn = JdbcUtils.getConn();
+                while (sc.hasNextLine()) {
+                    try {
+                        m = p.matcher(sc.nextLine());
+                        if (m.find()) {
+                            NginxLog nginxLog = new NginxLog();
+                            nginxLog.setIp(m.group(1));
+                            nginxLog.setTime(sdf.parse(m.group(2)));
+                            // 正则有个坑 GET / HTTP/1.1 3个字段一起归纳进m.group(3)了，本人正则辣鸡，就用笨办法拆分了
+                            String str = m.group(3);
+                            String method = null, target = null, prorocol = null;
+                            if (CommonUtils.isNotBlank(str)) {
+                                try {
+                                    if (str.contains(" ") && str.indexOf(" ") < 50) {
+                                        method = str.substring(0, str.indexOf(" "));
+                                        if (str.indexOf(" ") != str.lastIndexOf(" ")
+                                                && str.length() - str.lastIndexOf(" ") < 50) {
+                                            target = str.substring(str.indexOf(" "), str.lastIndexOf(" "));
+                                            prorocol = str.substring(str.lastIndexOf(" "), str.length());
+                                        } else {
+                                            target = str.substring(str.indexOf(" "), str.length());
+                                        }
+                                    } else {
+                                        target = str != null && str.length() > 10000 ? str.substring(0, 10000) : str;
+                                    }
+                                    if (method != null) {
+                                        method = method.trim();
+                                    }
+                                    if (target != null) {
+                                        target = target.trim();
+                                    }
+                                    if (prorocol != null) {
+                                        prorocol = prorocol.trim();
+                                    }
+                                } catch (Exception e) {
+                                    System.out.println("str:" + str);
+                                    e.printStackTrace();
+                                }
+                            }
+                            nginxLog.setMethod(method);
+                            nginxLog.setTarget(target);
+                            nginxLog.setProtocol(prorocol);
+                            nginxLog.setStatus(m.group(4) == null ? null : Integer.valueOf(m.group(4)));
+                            nginxLog.setCost(m.group(5) == null ? null : Integer.valueOf(m.group(5)));
+                            nginxLog.setReferrer(m.group(6));
+                            nginxLog.setUa(m.group(7));
+                            String sql = JdbcUtils.getSqlByNginxLog(nginxLog);
+                            int update = JdbcUtils.update(conn, sql);
+                            if (update == -1) {
+                                error++;
+                            } else {
+                                success++;
+                            }
+                        } else {
+                            error++;
+                        }
+                    } catch (Exception e) {
+                        error++;
+//                    e.printStackTrace();
+                    } catch (Throwable t){
+                        error++;
+//                    t.printStackTrace();
+                    }
+                }
+                cost = System.currentTimeMillis() - cost;
+                JdbcUtils.saveScanLog(new ScanLog(file.getName(), 0, "success", success, error, cost));
+                conn.close();
+                inputStream.close();
+                sc.close();
+            } catch (Exception e) {
+                cost = System.currentTimeMillis() - cost;
+                JdbcUtils.saveScanLog(new ScanLog(file.getName(), 1, "error:" + e.getMessage(), success, error, cost));
+                e.printStackTrace();
+            }
         }
     }
+
+
 
     public static void main(String[] args) {
         long temp = System.currentTimeMillis();

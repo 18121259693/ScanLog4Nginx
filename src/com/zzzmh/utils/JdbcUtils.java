@@ -80,6 +80,7 @@ public class JdbcUtils {
             CommonUtils.print("result:" + result);
             psmt.close();
         } catch (Exception e) {
+            System.out.println(sql);
             e.printStackTrace();
         }
         return result;

@@ -1,5 +1,6 @@
 package com.zzzmh;
 
+import com.alibaba.fastjson.JSON;
 import com.zzzmh.entity.NginxLog;
 import com.zzzmh.entity.ScanLog;
 import com.zzzmh.utils.CommonUtils;
@@ -11,6 +12,7 @@ import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -180,10 +182,71 @@ public class Application {
         }
     }
 
+    public void ScannerNewAccess(File file) {
+        System.out.println("开始解析:" + file.getName());
+        long success = 0, error = 0, cost = System.currentTimeMillis();
+        try {
+            // 这里是一个特殊的时间格式 所以单独声明到这里
+            FileInputStream inputStream = new FileInputStream(file);
+            Scanner sc = new Scanner(inputStream, "UTF-8");
+            Connection conn = JdbcUtils.getConn();
+            while (sc.hasNextLine()) {
+                try {
+                    String line = sc.nextLine();
+                    Map<String, Object> map = JSON.parseObject(line, Map.class);
+                    String ip = String.valueOf(map.get("ip"));
+                    String method = String.valueOf(map.get("method"));
+                    int status = (int) map.get("status");
+                    int bytes = (int) map.get("bytes");
+                    String url = String.valueOf(map.get("url"));
+                    String ua = String.valueOf(map.get("ua"));
+                    String ref = String.valueOf(map.get("ref"));
+                    String forward = String.valueOf(map.get("forward"));
+                    String time = String.valueOf(map.get("time"));
+                    if (ua.length() > 5000) ua = ua.substring(0, 5000);
+                    if (ref.length() > 5000) ref = ref.substring(0, 5000);
+                    if (forward.length() > 5000) forward = forward.substring(0, 5000);
+                    ua = ua.replaceAll("\"","'");
+                    ref = ref.replaceAll("\"","'");
+                    forward = forward.replaceAll("\"","'");
+                    String sql = "insert into sys_nginx_access_log (ip,method,status,bytes,url,ua,ref,forward,time) values (" +
+                            "\"" + ip + "\"," +
+                            "\"" + method + "\"," +
+                            "" + status + "," +
+                            "" + bytes + "," +
+                            "\"" + url + "\"," +
+                            "\"" + ua + "\"," +
+                            "\"" + ref + "\"," +
+                            "\"" + forward + "\"," +
+                            "from_unixtime(\"" + time + "\")" +
+                            ")";
+                    int update = JdbcUtils.update(conn, sql);
+                    if(update != -1){
+                        success ++;
+                    }else{
+                        error ++;
+                    }
+                } catch (Exception e) {
+                    error++;
+                } catch (Throwable t) {
+                    error++;
+                }
+            }
+            cost = System.currentTimeMillis() - cost;
+            JdbcUtils.saveScanLog(new ScanLog(file.getName(), 0, "success", success, error, cost));
+            conn.close();
+            inputStream.close();
+            sc.close();
+        } catch (Exception e) {
+            cost = System.currentTimeMillis() - cost;
+            JdbcUtils.saveScanLog(new ScanLog(file.getName(), 1, "error:" + e.getMessage(), success, error, cost));
+            e.printStackTrace();
+        }
+        System.out.println("结束解析:" + file.getName());
+    }
+
 
     public static void main(String[] args) {
-        long temp = System.currentTimeMillis();
-        new Application().ScannerAccessLog("20190301", "20190515");
-        System.out.println("运行结束 消耗时间:" + ((System.currentTimeMillis() - temp) / 1000.0) + "秒");
+        new Application().ScannerNewAccess(new File("C:\\Users\\Administrator\\Desktop\\logs\\access.log"));
     }
 }
